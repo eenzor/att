@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	ver      string
+	version  string
 	commit   string
 	logJSON  bool
 	httpAddr string
@@ -50,7 +50,7 @@ func main() {
 	addr := fmt.Sprintf("%s:%d", httpAddr, httpPort)
 
 	handler := http.NewServeMux()
-	handler.Handle("/version", version())
+	handler.Handle("/version", handleVersion())
 
 	server := &http.Server{
 		Addr:         addr,
@@ -64,11 +64,20 @@ func main() {
 	log.Fatal(server.ListenAndServe())
 }
 
-func version() http.Handler {
+func handleVersion() http.Handler {
 
+	response := fmt.Sprintf("\"myapplication\": %s\n", formatVersion(version, commit))
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logRequest(r)
+		fmt.Fprintf(w, response)
+	})
+}
+
+func formatVersion(v string, c string) string {
 	m := metadata{
-		Version:       ver,
-		LastCommitSHA: commit,
+		Version:       v,
+		LastCommitSHA: c,
 		Description:   "pre-interview technical test",
 	}
 
@@ -79,12 +88,7 @@ func version() http.Handler {
 		fmt.Println(err.Error())
 	}
 
-	response := fmt.Sprintf("\"myapplication\": %s\n", string(mb))
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logRequest(r)
-		fmt.Fprintf(w, response)
-	})
+	return string(mb)
 }
 
 func logRequest(r *http.Request) {
