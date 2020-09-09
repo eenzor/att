@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -8,6 +9,7 @@ import (
 )
 
 var ver string
+var commit string
 
 /*
 "myapplication": [
@@ -26,12 +28,12 @@ type metadata struct {
 }
 
 func main() {
-	router := http.NewServeMux()
-	router.Handle("/version", version())
+	handler := http.NewServeMux()
+	handler.Handle("/version", version())
 
 	server := &http.Server{
 		Addr:         ":8000",
-		Handler:      router,
+		Handler:      handler,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
@@ -41,7 +43,23 @@ func main() {
 }
 
 func version() http.Handler {
+
+	m := metadata{
+		Version:       ver,
+		LastCommitSHA: commit,
+		Description:   "pre-interview technical test",
+	}
+
+	ma := []metadata{m}
+
+	mb, err := json.MarshalIndent(ma, "", "  ")
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	response := fmt.Sprintf("\"myapplication\": %s\n", string(mb))
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "version: %s", ver)
+		fmt.Fprintf(w, response)
 	})
 }
