@@ -66,29 +66,38 @@ func main() {
 
 func handleVersion() http.Handler {
 
-	response := fmt.Sprintf("\"myapplication\": %s\n", formatVersion(version, commit))
+	metadata, err := formatVersion(version, commit, "pre-interview technical test")
+	if err != nil {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			logRequest(r)
+			fmt.Fprintf(w, "Service Error")
+			w.WriteHeader(http.StatusServiceUnavailable)
+		})
+	}
 
+	response := fmt.Sprintf("\"myapplication\": %s\n", metadata)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logRequest(r)
 		fmt.Fprintf(w, response)
 	})
 }
 
-func formatVersion(v string, c string) string {
+func formatVersion(v string, c string, d string) (string, error) {
 	m := metadata{
 		Version:       v,
 		LastCommitSHA: c,
-		Description:   "pre-interview technical test",
+		Description:   d,
 	}
 
 	ma := []metadata{m}
 
 	mb, err := json.MarshalIndent(ma, "", "  ")
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
+		return "", err
 	}
 
-	return string(mb)
+	return string(mb), nil
 }
 
 func logRequest(r *http.Request) {
