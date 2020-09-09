@@ -2,14 +2,20 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
 	"time"
 )
 
-var ver string
-var commit string
+var (
+	ver      string
+	commit   string
+	logJSON  bool
+	httpAddr string
+	httpPort int
+)
 
 /*
 "myapplication": [
@@ -27,18 +33,34 @@ type metadata struct {
 	Description   string `json:"description"`
 }
 
+type requestLog struct {
+	Date     string `json:"timestamp"`
+	Host     string `json:"host"`
+	Method   string `json:"method"`
+	Path     string `json:"path"`
+	Protocol string `json:"protocol"`
+}
+
 func main() {
+	flag.BoolVar(&logJSON, "json", false, "log ouput as JSON")
+	flag.StringVar(&httpAddr, "address", "", "The TCP address to listen on")
+	flag.IntVar(&httpPort, "port", 8000, "The TCP port to listen on")
+	flag.Parse()
+
+	addr := fmt.Sprintf("%s:%d", httpAddr, httpPort)
+
 	handler := http.NewServeMux()
 	handler.Handle("/version", version())
 
 	server := &http.Server{
-		Addr:         ":8000",
+		Addr:         addr,
 		Handler:      handler,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  15 * time.Second,
 	}
 
+	log.Printf("Listening on %s\n", addr)
 	log.Fatal(server.ListenAndServe())
 }
 
@@ -60,6 +82,29 @@ func version() http.Handler {
 	response := fmt.Sprintf("\"myapplication\": %s\n", string(mb))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logRequest(r)
 		fmt.Fprintf(w, response)
 	})
+}
+
+func logRequest(r *http.Request) {
+	lr := requestLog{
+		Host:     r.RemoteAddr,
+		Method:   r.Method,
+		Path:     r.URL.Path,
+		Protocol: r.Proto,
+		Date:     time.Now().Format(time.RFC3339),
+	}
+
+	out := fmt.Sprintf("%+v", lr)
+
+	if logJSON {
+		b, err := json.Marshal(lr)
+		if err != nil {
+			log.Printf(err.Error())
+		}
+		out = string(b)
+	}
+
+	fmt.Println(out)
 }
