@@ -1,4 +1,4 @@
-### base image to cache apk updates and the go modules
+### base image to cache apk updates and the go modules and build the binary
 
 FROM golang:alpine as build
 
