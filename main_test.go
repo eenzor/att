@@ -3,77 +3,122 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"log"
-	"strings"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
-const (
-	red    = "\033[31m"
-	green  = "\033[32m"
-	yellow = "\033[33m"
-	reset  = "\033[0m\n"
-)
-
-func TestFormatVersion(t *testing.T) {
-
-	v := "10.1.9"
-	c := "ea11f6e"
-
-	expected :=
-		`[
+var (
+	testVersion     = "10.1.9"
+	testSHA         = "ea11f6e"
+	testDescription = "description"
+	testMetadata    = `[
   {
     "version": "10.1.9",
     "lastcommitsha": "ea11f6e",
     "description": "description"
   }
 ]`
+)
 
-	received, err := formatVersion(v, c, "description")
+const (
+	// terminal color escape sequences
+	red   = "\033[31m"
+	green = "\033[32m"
+	reset = "\033[0m"
+)
+
+func TestFormatVersion(t *testing.T) {
+
+	received, err := formatVersion(testVersion, testSHA, "description")
 	if err != nil {
-		log.Println(err.Error())
-		t.Fail()
+		t.Error(err.Error())
 	}
-	if expected != received {
-		fmt.Print(diff(expected, received))
-		t.Fail()
+	if received != testMetadata {
+		got, want, _ := diff(received, testMetadata)
+		t.Errorf("formatVersion returned unexpected response:\ngot\n%v\nwant\n%v",
+			got, want)
 	}
 }
 
-// a basic diff function to pretty print the difference between two strings
-// matching sections are printed in green, expected in yellow, and mismatching in red
-// not very robust against missing characters (prints a rainbow)
-// but makes it easy to spot where the strings diverge
-func diff(a string, b string) string {
+func TestVersionHandler(t *testing.T) {
+
+	version = testVersion
+	commit = testSHA
+	description = testDescription
+	logFormat = "none"
+
+	req, err := http.NewRequest("GET", "/version", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	rr := httptest.NewRecorder()
+	handler := http.HandlerFunc(versionHandler)
+
+	handler.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			rr.Code, http.StatusOK)
+	}
+
+	expected := fmt.Sprintf("\"myapplication\": %s\n", testMetadata)
+
+	if rr.Body.String() != expected {
+		got, want, _ := diff(rr.Body.String(), expected)
+		t.Errorf("handler returned unexpected body: got %v want %v",
+			got, want)
+	}
+}
+
+// diff takes two strings and compares them, returning them with the differences
+// colour coded, in addition to a bool indicating if they differ
+func diff(a string, b string) (string, string, bool) {
+
+	if a == b {
+		return a, b, false
+	}
 
 	a, b = pad(a, b)
-	var buf bytes.Buffer
+	var aBuf bytes.Buffer
+	var bBuf bytes.Buffer
 	match := true
-	buf.WriteString(green)
 
 	for i := range a {
 		if a[i] == b[i] {
 			if match != true {
-				buf.WriteString(green)
+				aBuf.WriteString(reset)
+				bBuf.WriteString(reset)
 			}
-			buf.WriteByte(a[i])
+			aBuf.WriteByte(a[i])
+			bBuf.WriteByte(b[i])
 			match = true
 		} else {
-			buf.WriteString(yellow)
-			buf.WriteByte(a[i])
-			buf.WriteString(red)
-			buf.WriteByte(b[i])
+			aBuf.WriteString(red)
+			aBuf.WriteByte(a[i])
+			bBuf.WriteString(green)
+			bBuf.WriteByte(b[i])
 			match = false
 		}
 
 	}
-	buf.WriteString(reset)
-	return buf.String()
+
+	aBuf.WriteString(reset)
+	bBuf.WriteString(reset)
+
+	return aBuf.String(), bBuf.String(), true
 }
 
+// pad takes two strings and right pads the shorter
+// to be the same length as the longer
 func pad(a string, b string) (string, string) {
 
-	padChar := " "
+	if len(a) == len(b) {
+		return a, b
+	}
+
+	padChar := "~" // the character to pad the strings with
 	flipped := false
 
 	// make sure a is always the longest string
@@ -82,18 +127,16 @@ func pad(a string, b string) (string, string) {
 		flipped = true
 	}
 
-	// enter a loop
+	// keep adding the padding character until
+	// the strings are equal in length
 	for {
-		// add the padding character to string b
 		b += padChar
-
-		// if the length of b is now grater than a
-		// return a, and b up to the length of a
-		if len(b) > len(a) {
+		if len(b) >= len(a) {
 			break
 		}
 	}
 
+	// return the strings in the correct order
 	if flipped {
 		return b[0:len(a)], a
 	}
@@ -107,10 +150,9 @@ func TestPad(t *testing.T) {
 	b := "123456"
 
 	a, b = pad(a, b)
+
 	if len(a) != len(b) {
-		fmt.Println("a=|" + a + "|")
-		fmt.Println("b=|" + b + "|")
-		t.Fail()
+		t.Errorf("\na=|" + a + "|\nb=|" + b + "|")
 	}
 }
 
@@ -118,10 +160,8 @@ func TestDiff(t *testing.T) {
 	a := "123ABC"
 	b := "123XB"
 
-	d := diff(a, b)
-	// we know the strings differ
-	// so we should expect to see the escape sequence for red in there
-	if !strings.Contains(d, red) {
-		t.Fail()
+	_, _, e := diff(a, b)
+	if !e {
+		t.Error("diff says unequal strings are equal")
 	}
 }
