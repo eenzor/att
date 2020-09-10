@@ -46,14 +46,12 @@ jobs:
         go version
         go get -u golang.org/x/lint/golint
 
-    # Run vet & lint on the code
-    - name: Run vet & lint
-      run: |
-        go vet .
-        golint .
+    # Run vet on the code
+    - name: Run vet
+      run: go vet .
 
     # Run golangci lint on the code
-    - name: golangci-lint
+    - name: Run golangci-lint
       uses: golangci/golangci-lint-action@v2
       with:
         version: v1.29
