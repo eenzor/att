@@ -1,5 +1,12 @@
 language: go
 services:
     - docker
-script:
-    - ./build.sh
+    jobs:
+        include:
+          - stage: lint and test
+            script: golint
+            script: go test --race --timeout 10s
+          - stage: build golang binary
+            script: ./build.sh
+          - stage: build docker image
+            script: docker build --tag att:latest .
