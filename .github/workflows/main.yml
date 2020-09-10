@@ -1,4 +1,5 @@
 # This is a basic workflow to help you get started with Actions
+# Sourced from: https://medium.com/swlh/setting-up-github-actions-for-go-project-ea84f4ed3a40
 
 name: CICD
 
@@ -38,7 +39,7 @@ jobs:
 
     # Run vet & lint on the code
     - name: Run vet & lint
-        run: |
+      run: |
         go vet .
         golint .
 
