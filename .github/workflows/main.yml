@@ -45,11 +45,11 @@ jobs:
         go vet .
         golint .
 
-    # Run gosec on the code
-    - name: Run Gosec Security Scanner
-      uses: securego/gosec@master
-      with:
-        args: ./...
+    # # Run gosec on the code
+    # - name: Run Gosec Security Scanner
+    #   uses: securego/gosec@master
+    #   with:
+    #     args: ./...
 
     # Run testing on the code
     - name: Run tests
