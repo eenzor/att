@@ -2,4 +2,4 @@ language: go
 services:
     - docker
 script:
-    - build.sh
+    - ./build.sh
