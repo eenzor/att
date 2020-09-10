@@ -141,6 +141,7 @@ func logRequest(r *http.Request, status int, size int) {
 		b, err := json.Marshal(lr)
 		if err != nil {
 			log.Print(err.Error())
+			return
 		}
 		out = string(b)
 	default:
