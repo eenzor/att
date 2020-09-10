@@ -10,7 +10,7 @@ WORKDIR /app
 
 ADD ./ /app
 
-RUN /app/build.sh
+RUN /app/bin/build.sh
 
 ### run image with only the binary
 
