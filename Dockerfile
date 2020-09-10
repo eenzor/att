@@ -18,6 +18,6 @@ FROM scratch
 
 COPY --from=build /app/att /app/att
 
-ENTRYPOINT ["/app/att"]
+ENTRYPOINT ["/app/att", "-address", "0.0.0.0", "-log", "json"]
 
 EXPOSE 8000
