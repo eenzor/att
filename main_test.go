@@ -74,10 +74,12 @@ func diff(a string, b string) string {
 func pad(a string, b string) (string, string) {
 
 	padChar := " "
+	flipped := false
 
 	// make sure a is always the longest string
 	if len(b) > len(a) {
 		a, b = b, a
+		flipped = true
 	}
 
 	// enter a loop
@@ -88,20 +90,26 @@ func pad(a string, b string) (string, string) {
 		// if the length of b is now grater than a
 		// return a, and b up to the length of a
 		if len(b) > len(a) {
-			return a, b[0:len(a)]
+			break
 		}
 	}
+
+	if flipped {
+		return b[0:len(a)], a
+	}
+
+	return a, b[0:len(a)]
 
 }
 
 func TestPad(t *testing.T) {
-	a := "123"
+	a := "1234"
 	b := "123456"
 
 	a, b = pad(a, b)
 	if len(a) != len(b) {
-		fmt.Println("|" + a + "|")
-		fmt.Println("|" + b + "|")
+		fmt.Println("a=|" + a + "|")
+		fmt.Println("b=|" + b + "|")
 		t.Fail()
 	}
 }
