@@ -36,8 +36,7 @@ func TestFormatVersion(t *testing.T) {
 	}
 	if received != testMetadata {
 		got, want, _ := diff(received, testMetadata)
-		t.Errorf("formatVersion returned unexpected response:\ngot\n%v\nwant\n%v",
-			got, want)
+		t.Errorf("formatVersion returned unexpected response:\ngot\n%v\nwant\n%v", got, want)
 	}
 }
 
@@ -59,16 +58,14 @@ func TestVersionHandler(t *testing.T) {
 	handler.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusOK {
-		t.Errorf("handler returned wrong status code: got %v want %v",
-			rr.Code, http.StatusOK)
+		t.Errorf("handler returned wrong status code: got %v want %v", rr.Code, http.StatusOK)
 	}
 
 	expected := fmt.Sprintf("\"myapplication\": %s\n", testMetadata)
 
 	if rr.Body.String() != expected {
 		got, want, _ := diff(rr.Body.String(), expected)
-		t.Errorf("handler returned unexpected body: got %v want %v",
-			got, want)
+		t.Errorf("handler returned unexpected body: got %v want %v", got, want)
 	}
 }
 
@@ -118,7 +115,7 @@ func pad(a string, b string) (string, string) {
 		return a, b
 	}
 
-	padChar := "~" // the character to pad the strings with
+	padChar := "~"
 	flipped := false
 
 	// make sure a is always the longest string
@@ -127,8 +124,7 @@ func pad(a string, b string) (string, string) {
 		flipped = true
 	}
 
-	// keep adding the padding character until
-	// the strings are equal in length
+	// keep adding the padding character until the strings are equal in length
 	for {
 		b += padChar
 		if len(b) >= len(a) {
