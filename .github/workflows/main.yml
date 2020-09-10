@@ -1,9 +1,10 @@
-# This is a basic workflow to help you get started with Actions
-# Sourced from: https://medium.com/swlh/setting-up-github-actions-for-go-project-ea84f4ed3a40
+# This is a basic workflow to help you get started with Actions, sourced from:
+# https://medium.com/swlh/setting-up-github-actions-for-go-project-ea84f4ed3a40
 
+---
 name: CICD
 
-on:
+on:  # yamllint disable-line rule:truthy
   push:
     branches:
       - master
@@ -15,7 +16,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      GO111MODULE: on
+      GO111MODULE: on  # yamllint disable-line rule:truthy
 
     steps:
       - name: Checkout Source
@@ -65,15 +66,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./att
           asset_name: att
           asset_content_type: application/octet-stream
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [build] # Only run this workflow when "build" workflow succeeds
-    if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }} # Only run this workflow if it is master branch on push event
+    needs: [build]
+    if: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
