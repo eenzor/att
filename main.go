@@ -41,7 +41,7 @@ type requestLog struct {
 }
 
 func main() {
-	flag.StringVar(&logFormat, "log", "kv", "the log format to use, none|combined|json|kv")
+	flag.StringVar(&logFormat, "log", "kv", "the log format to use [none|combined|json|kv]")
 	flag.StringVar(&httpAddr, "address", "127.0.0.1", "The TCP address to listen on")
 	flag.IntVar(&httpPort, "port", 8000, "The TCP port to listen on")
 	flag.Parse()
