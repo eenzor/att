@@ -54,8 +54,8 @@ jobs:
 
     # Run golangci lint on the code
     - name: golangci-lint
-    uses: golangci/golangci-lint-action@v2
-    with:
+      uses: golangci/golangci-lint-action@v2
+      with:
         version: v1.29
 
     # Run testing on the code
