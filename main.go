@@ -6,26 +6,19 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"time"
 )
 
 var (
-	version  string
-	commit   string
-	logJSON  bool
-	httpAddr string
-	httpPort int
+	httpPort    int
+	commit      string
+	description string
+	httpAddr    string
+	logFormat   string
+	version     string
 )
-
-/*
-"myapplication": [
-	{
-		"version": "1.0",
-		"lastcommitsha": "abc57858585",
-		"description" : "pre-interview technical test"
-	}
-]
-*/
 
 type metadata struct {
 	Version       string `json:"version"`
@@ -34,23 +27,35 @@ type metadata struct {
 }
 
 type requestLog struct {
-	Date     string `json:"timestamp"`
-	Host     string `json:"host"`
-	Method   string `json:"method"`
-	Path     string `json:"path"`
-	Protocol string `json:"protocol"`
+	RemoteHost string `json:"host"`
+	Identity   string `json:"identity"`
+	User       string `json:"user"`
+	Date       string `json:"timestamp"`
+	Method     string `json:"method"`
+	Path       string `json:"path"`
+	Protocol   string `json:"protocol"`
+	Status     int    `json:"status"`
+	Size       int    `json:"contentlength"`
+	Referer    string `json:"referer"`
+	UserAgent  string `json:"useragent"`
 }
 
 func main() {
-	flag.BoolVar(&logJSON, "json", false, "log ouput as JSON")
-	flag.StringVar(&httpAddr, "address", "", "The TCP address to listen on")
+	flag.StringVar(&logFormat, "log", "kv", "the log format to use, none|combined|json|kv")
+	flag.StringVar(&httpAddr, "address", "127.0.0.1", "The TCP address to listen on")
 	flag.IntVar(&httpPort, "port", 8000, "The TCP port to listen on")
 	flag.Parse()
+
+	d, exists := os.LookupEnv("DESCRIPTION")
+	if !exists {
+		d = "pre-interview technical test"
+	}
+	description = d
 
 	addr := fmt.Sprintf("%s:%d", httpAddr, httpPort)
 
 	handler := http.NewServeMux()
-	handler.Handle("/version", handleVersion())
+	handler.HandleFunc("/version", versionHandler)
 
 	server := &http.Server{
 		Addr:         addr,
@@ -64,22 +69,16 @@ func main() {
 	log.Fatal(server.ListenAndServe())
 }
 
-func handleVersion() http.Handler {
-
-	metadata, err := formatVersion(version, commit, "pre-interview technical test")
+func versionHandler(w http.ResponseWriter, r *http.Request) {
+	metadata, err := formatVersion(version, commit, description)
 	if err != nil {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			logRequest(r)
-			fmt.Fprintf(w, "Service Error")
-			w.WriteHeader(http.StatusServiceUnavailable)
-		})
+		fmt.Fprintf(w, "Service Error")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		return
 	}
-
 	response := fmt.Sprintf("\"myapplication\": %s\n", metadata)
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logRequest(r)
-		fmt.Fprint(w, response)
-	})
+	logRequest(r, http.StatusOK, len(response))
+	fmt.Fprint(w, response)
 }
 
 func formatVersion(v string, c string, d string) (string, error) {
@@ -100,23 +99,53 @@ func formatVersion(v string, c string, d string) (string, error) {
 	return string(mb), nil
 }
 
-func logRequest(r *http.Request) {
-	lr := requestLog{
-		Host:     r.RemoteAddr,
-		Method:   r.Method,
-		Path:     r.URL.Path,
-		Protocol: r.Proto,
-		Date:     time.Now().Format(time.RFC3339),
+func logRequest(r *http.Request, status int, size int) {
+
+	if logFormat == "none" {
+		return
 	}
 
-	out := fmt.Sprintf("%+v", lr)
+	var out string
 
-	if logJSON {
+	t := time.Now()
+	u, _, ok := r.BasicAuth()
+	if !ok {
+		u = "-"
+	}
+	a := strings.Split(r.RemoteAddr, ":")
+
+	lr := requestLog{
+		RemoteHost: a[0],
+		Identity:   "-",
+		User:       u,
+		Date:       t.Format(time.RFC3339),
+		Method:     r.Method,
+		Path:       r.URL.Path,
+		Protocol:   r.Proto,
+		Status:     status,
+		Size:       size,
+		UserAgent:  r.UserAgent(),
+		Referer:    r.Referer(),
+	}
+
+	switch logFormat {
+	case "combined":
+		out = fmt.Sprintf("%s - %s [%s] \"%s %s %s\" %d %d \"%s\" \"%s\"",
+			a[0], u, t.Format("2/01/2006:15:04:05 -0700"), r.Method, r.URL.Path,
+			r.Proto, status, size, r.Referer(), r.UserAgent(),
+		)
+	case "kv":
+		out = fmt.Sprintf("%+v", lr)
+		out = out[1 : len(out)-1] // remove {} from printed struct
+	case "json":
 		b, err := json.Marshal(lr)
 		if err != nil {
 			log.Print(err.Error())
 		}
 		out = string(b)
+	default:
+		out = fmt.Sprintf("%+v", lr)
+		out = out[1 : len(out)-1]
 	}
 
 	fmt.Println(out)
