@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 COMMIT=$(git rev-parse --short HEAD)
-VERSION="dev"
-if [[ $# -eq 1 ]]; then
-    VERSION=$1
-fi
+VERSION=$(grep -E "## \[[0-9]*.[0-9]*.[0-9]*\]" CHANGELOG.md | head -1 | cut -d "[" -f2 | cut -d "]" -f1 )
 
 echo "building version: $VERSION from commit: $COMMIT"
 
