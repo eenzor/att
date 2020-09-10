@@ -52,6 +52,12 @@ jobs:
         go vet .
         golint .
 
+    # Run golangci lint on the code
+    - name: golangci-lint
+    uses: golangci/golangci-lint-action@v2
+    with:
+        version: v1.29
+
     # Run testing on the code
     - name: Run tests
       run: go test -v -race -timeout 30s

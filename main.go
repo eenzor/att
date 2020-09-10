@@ -78,7 +78,7 @@ func handleVersion() http.Handler {
 	response := fmt.Sprintf("\"myapplication\": %s\n", metadata)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		logRequest(r)
-		fmt.Fprintf(w, response)
+		fmt.Fprint(w, response)
 	})
 }
 
@@ -114,7 +114,7 @@ func logRequest(r *http.Request) {
 	if logJSON {
 		b, err := json.Marshal(lr)
 		if err != nil {
-			log.Printf(err.Error())
+			log.Print(err.Error())
 		}
 		out = string(b)
 	}
