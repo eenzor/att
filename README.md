@@ -4,12 +4,14 @@
 att is a simple webserver which responds to the /version endpoint and prints some simple metadata.  
 It is is written in golang using only the standard libraries.  
 
-## Building the WebServer Binary
+## Building and Running the Webserver
+
+### Building the binary
 
 To build the binary run the script `./bin/build.sh`  
 This will extract the latest version number from the change-log file and the latest commit SHA from git and pass these to the build so the /version endpoint shows us the correct metadata.
 
-## Running the WebServer Binary
+## Running the binary
 
 First build the binary,
 
@@ -25,20 +27,20 @@ Usage of ./att:
 
 Additionally, the description can be changed by setting the `DESCRIPTION` environment variable.
 
-## Building the WebServer Container
+### Building the container
 
 A dockerfile has been included which will build the binary into a docker image.
 The script `./bin/docker-build.sh` can be used to build the image with the latest  
 version tag from the change-log file.
 
-## Running the WebServer Container
+### Running the container
 
 First build the container
 ```
 docker run -p 8000:8000 att:latest
 ```
 
-## Pipeline
+## CICD Pipeline
 
 A pipeline has been created using Github Actions.  
 This is configured in `.github/workflows/main.yml`  
@@ -68,6 +70,7 @@ This makes it easy to check the code and the tests will pass before pushing.
  - No TLS
  - No healthz endpoint
  - No (prometheus style) metrics endpoint
+ - No instrumentation for distributed tracing
  - No load testing has been performedon the server
  - Only successful requests are logged
  - The server only listens on IPv4 addresses
