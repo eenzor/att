@@ -40,6 +40,11 @@ First build the container
 docker run -p 8000:8000 att:latest
 ```
 
+alternatively the container can be pulled and run from docker hub
+```
+docker run -p 8000:8000 eenzor/att:latest
+```
+
 ## CICD Pipeline
 
 A pipeline has been created using Github Actions.  
